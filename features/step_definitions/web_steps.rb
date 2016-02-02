@@ -25,8 +25,7 @@ Then(/^I read the data from the spreadsheet$/) do
 end
 
 
-
-########## This is for xlsx spreadsheet
+########## This is for xlsx format spreadsheet
 # Then(/^I read the data from the spreadsheet$/) do
   # require 'roo'
   # require 'spreadsheet'
@@ -52,11 +51,11 @@ end
 def find_el(el_name)
   obj_info=@obj_repo_row["#{el_name}"]
   parent = @browser
-  if obj_info[5]
-    find_els(el_name)[obj_info[5].to_i]
+  if obj_info[4]
+    find_els(el_name)[obj_info[4].to_i]
   else
-    if obj_info[4]
-      frame =@obj_repo_row["#{obj_info[4]}"]
+    if obj_info[3]
+      frame =@obj_repo_row["#{obj_info[3]}"]
       if frame[2] == 'iframe'
         parent =  @browser.iframe(frame[0].to_sym, "#{frame[1]}")
       elsif  frame[2] == 'form'
@@ -81,10 +80,10 @@ end
 def find_els(el_name)
   obj_info=@obj_repo_row["#{el_name}"]
   parent = @browser
-  if obj_info[4]
-    frame =@obj_repo_row["#{obj_info[4]}"]
+  if obj_info[3]
+    frame =@obj_repo_row["#{obj_info[3]}"]
     if frame[2] == 'iframe'
-      parent =  @browser.iframe(frame[0].to_sym, "#{frame[1]}")
+      parent =  @browser.frame(frame[0].to_sym, "#{frame[1]}")
     elsif  frame[2] == 'form'
       parent = @browser.form(frame[0].to_sym, "#{frame[1]}")
     end
@@ -109,8 +108,7 @@ def find_element(element_name, how=nil, what=nil,element=nil,value=nil,parent=ni
   how ||= @obj_repo_row[element_name][0]
   what ||= @obj_repo_row[element_name][1]
   element ||= @obj_repo_row[element_name][2]
-  value ||= @obj_repo_row[element_name][3]
-  parent ||= @obj_repo_row[element_name][4]
+  parent ||= @obj_repo_row[element_name][3]
   get_element(element, how, what, value, parent)
 end
 
@@ -118,10 +116,9 @@ end
 #used by getelement function if you have frames within frames
 def get_parent(browser, element)
   frame =@obj_repo_row["#{element}"]
-  if frame[4]
-    browser = get_parent(browser,frame[4])
-	
- end
+  if frame[3]
+    browser = get_parent(browser,frame[3])
+  end
   
  if frame[2] == 'iframe'
     parent =  browser.iframe(frame[0].to_sym, "#{frame[1]}")
@@ -142,7 +139,6 @@ def wait_until_ready(el)
 end
 
 def get_value(value)
-  
   value = @user_data_row[value] if @user_data_row[value]
   value
 end
@@ -166,21 +162,19 @@ def get_element(element, how, what, value = nil, parent_el = nil)
     when :div
       target = parent.div(how, what)
     when :checkbox
-      target = parent.checkbox(how, what, value)
+      target = parent.checkbox(how, what)
     when :text_field, :textfield
-	# require 'pry'
-	# binding.pry
-      target = parent.text_field(how, what)
+	   target = parent.text_field(how, what)
     when :image
       target = parent.image(how, what)
     when :file_field, :filefield
       target = parent.file_field(how, what)
     when :form
       target = parent.form(how, what)
-    when :frame, :iframe
+    when :frame
       target = parent.iframe(how, what)
     when :radio
-      target = parent.radio(how, what, value)
+      target = parent.radio(how, what)
     when :span
       target = parent.span(how, what)
     when :table
@@ -225,10 +219,10 @@ Then(/^I read the data from the stylesheet$/) do
       @obj_repo_row[row[0]] = row[1..45]
     end
   end
-
   sleep(1)
 end
 
+## show the errors
 And(/^show errors if any$/) do
   @fail_log ||= []
   @fail_log.empty? ? puts('All passed') : raise(@fail_log.join(" "))
@@ -243,7 +237,8 @@ And(/^I click the "([^"]*)"$/) do |element_name|
     el.click}
 end
 
-
+## Click the element if exists on the page$
+## * I click the "Sign In" if on "Signon page"
 And(/^I click the "([^"]*)" if on "([^"]*)" page$/) do |element_name, title|
   sleep 2
   if @browser.window.title.include? title
@@ -255,24 +250,41 @@ And(/^I click the "([^"]*)" if on "([^"]*)" page$/) do |element_name, title|
   end
 end
 
-
+## Click button or link
+## Example: * click "Submit"
 And(/^click "([^"]*)"$/) do |arg|
   wait_until_ready(find_element(arg)).click
 end
 
-
+## Select value from dropdown
 And(/^select "([^"]*)" from "([^"]*)"$/) do |value, dropdown|
   sleep 5
   find_element(dropdown).when_present.select get_value(value)
 
 end
 
-
-And(/^enter "([^"]*)" into "([^"]*)"$/) do |text, input_field|
-  wait_until_ready(find_element(input_field).when_present).send_keys(get_value(text))
-   
+## Checkbox and Radio button selection
+## Example: * select "Keep me signed in"
+And(/^select "([^"]*)"$/) do |element|
+ sleep 5
+  find_element(element).when_present.set
 end
 
+## Checkbox and Radio button clear selection
+## Example: * unselect "Keep me signed in"
+And(/^unselect "([^"]*)"$/) do |element|
+ sleep 5
+  find_element(element).when_present.clear
+end
+
+## Enter values in the text field
+## Example: * enter "email" into "Email Address"
+And(/^enter "([^"]*)" into "([^"]*)"$/) do |text, input_field|
+  wait_until_ready(find_element(input_field).when_present).send_keys(get_value(text))
+end
+
+## Check text of the element
+## Example: * "text_SignIn" is displayed in "SignInbutton"
 And(/^"([^"]*)" is displayed in "([^"]*)"$/) do |text, element|
   text=get_value(text)
   what = @obj_repo_row[element][1]
@@ -280,13 +292,8 @@ And(/^"([^"]*)" is displayed in "([^"]*)"$/) do |text, element|
     el = find_element(element)
     raise("Value does not match: \n Expected: #{text} \n Actual: #{el.text}") unless el.text == text
   else
-    el = find_element(element,"text",text).when_present
+   el = find_element(element,"text",text).when_present
   end
   raise("element not visible") unless el.visible?
   el.flash
-end
-
-And(/^click "([^"]*)" with "([^"]*)"$/) do |element, text|
-  text=get_value(text)
-  find_element(element,"text",text).when_present.click
 end
