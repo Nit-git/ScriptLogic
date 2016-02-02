@@ -16,7 +16,7 @@ Then(/^I read the data from the spreadsheet$/) do
   end
   @obj_repo_row = {}
   obj_repo.each do |row|
-      @obj_repo_row[row[0]] = row[1..3]
+      @obj_repo_row[row[0]] = row[1..5]
   end
   @user_data_row = {}
   user_data.each do |row|
@@ -26,15 +26,37 @@ end
 
 
 
+########## This is for xlsx spreadsheet
+# Then(/^I read the data from the spreadsheet$/) do
+  # require 'roo'
+  # require 'spreadsheet'
+  #@myRoot = File.join(File.dirname(__FILE__),'/')
+  # book = Roo::Spreadsheet.open "#{@myRoot}data.xls"
+  
+  # def read_data(sheet_name)
+  # data = {}
+  # for i in 1..sheet_name.last_row
+  # data[sheet_name.row(i)[0]] = sheet_name.row(i)[1..sheet_name.last_column]
+  # end
+  # return data
+  # end
+  
+  # obj_repo = book.sheet("obj_repo")
+  # @obj_repo_row = read_data(obj_repo)
+  # user_data = book.sheet("user_data")
+  # @user_data_row = read_data(user_data)
+  # login = book.sheet("login")
+  # @login_row = read_data(login)
+  
 
 def find_el(el_name)
   obj_info=@obj_repo_row["#{el_name}"]
   parent = @browser
-  if obj_info[4]
-    find_els(el_name)[obj_info[4].to_i]
+  if obj_info[5]
+    find_els(el_name)[obj_info[5].to_i]
   else
-    if obj_info[3]
-      frame =@obj_repo_row["#{obj_info[3]}"]
+    if obj_info[4]
+      frame =@obj_repo_row["#{obj_info[4]}"]
       if frame[2] == 'iframe'
         parent =  @browser.iframe(frame[0].to_sym, "#{frame[1]}")
       elsif  frame[2] == 'form'
@@ -56,13 +78,11 @@ def find_el(el_name)
   end
 end
 
-
-
 def find_els(el_name)
   obj_info=@obj_repo_row["#{el_name}"]
   parent = @browser
-  if obj_info[3]
-    frame =@obj_repo_row["#{obj_info[3]}"]
+  if obj_info[4]
+    frame =@obj_repo_row["#{obj_info[4]}"]
     if frame[2] == 'iframe'
       parent =  @browser.iframe(frame[0].to_sym, "#{frame[1]}")
     elsif  frame[2] == 'form'
@@ -84,22 +104,26 @@ def find_els(el_name)
     parent.elements(obj_info[0].to_sym, "#{obj_info[1]}")
   end
 end
-def find_element(element_name, how=nil, what=nil,element=nil,parent=nil)
+
+def find_element(element_name, how=nil, what=nil,element=nil,value=nil,parent=nil)
   how ||= @obj_repo_row[element_name][0]
   what ||= @obj_repo_row[element_name][1]
   element ||= @obj_repo_row[element_name][2]
-  parent ||= @obj_repo_row[element_name][3]
-  get_element(element, how, what, parent)
+  value ||= @obj_repo_row[element_name][3]
+  parent ||= @obj_repo_row[element_name][4]
+  get_element(element, how, what, value, parent)
 end
 
 #get all the parents of object to find the element to final object.
 #used by getelement function if you have frames within frames
 def get_parent(browser, element)
-  obj_info =@obj_repo_row["#{element}"]
-  if obj_info[3]
-    browser = get_parent(browser,obj_info[3])
-  end
-  if frame[2] == 'iframe'
+  frame =@obj_repo_row["#{element}"]
+  if frame[4]
+    browser = get_parent(browser,frame[4])
+	
+ end
+  
+ if frame[2] == 'iframe'
     parent =  browser.iframe(frame[0].to_sym, "#{frame[1]}")
   elsif  frame[2] == 'form'
     parent = browser.form(frame[0].to_sym, "#{frame[1]}")
@@ -107,7 +131,8 @@ def get_parent(browser, element)
     parent = browser.element(frame[0].to_sym, "#{frame[1]}")
   end
   parent
-end
+  end
+
 
 def wait_until_ready(el)
   Watir::Wait.until {el.exists?} rescue nil
@@ -117,7 +142,7 @@ def wait_until_ready(el)
 end
 
 def get_value(value)
-  value
+  
   value = @user_data_row[value] if @user_data_row[value]
   value
 end
@@ -128,7 +153,8 @@ def get_element(element, how, what, value = nil, parent_el = nil)
     parent = get_parent(@browser, parent_el)
   end
   target = nil
-
+  
+ 
   what = Regexp.new(Regexp.escape(what)) if how == 'regex' #or what.is_a?(Regexp)
   how = 'text' if how == 'regex'
   how = how.to_sym rescue nil
@@ -142,6 +168,8 @@ def get_element(element, how, what, value = nil, parent_el = nil)
     when :checkbox
       target = parent.checkbox(how, what, value)
     when :text_field, :textfield
+	# require 'pry'
+	# binding.pry
       target = parent.text_field(how, what)
     when :image
       target = parent.image(how, what)
@@ -149,8 +177,8 @@ def get_element(element, how, what, value = nil, parent_el = nil)
       target = parent.file_field(how, what)
     when :form
       target = parent.form(how, what)
-    when :frame
-      target = parent.frame(how, what)
+    when :frame, :iframe
+      target = parent.iframe(how, what)
     when :radio
       target = parent.radio(how, what, value)
     when :span
@@ -242,6 +270,7 @@ end
 
 And(/^enter "([^"]*)" into "([^"]*)"$/) do |text, input_field|
   wait_until_ready(find_element(input_field).when_present).send_keys(get_value(text))
+   
 end
 
 And(/^"([^"]*)" is displayed in "([^"]*)"$/) do |text, element|
