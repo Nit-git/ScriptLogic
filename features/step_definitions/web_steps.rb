@@ -104,12 +104,12 @@ def find_els(el_name)
   end
 end
 
-def find_element(element_name, how=nil, what=nil,element=nil,value=nil,parent=nil)
+def find_element(element_name, how=nil, what=nil,element=nil,parent=nil)
   how ||= @obj_repo_row[element_name][0]
   what ||= @obj_repo_row[element_name][1]
   element ||= @obj_repo_row[element_name][2]
   parent ||= @obj_repo_row[element_name][3]
-  get_element(element, how, what, value, parent)
+  get_element(element, how, what, parent)
 end
 
 #get all the parents of object to find the element to final object.
@@ -143,7 +143,7 @@ def get_value(value)
   value
 end
 
-def get_element(element, how, what, value = nil, parent_el = nil)
+def get_element(element, how, what, parent_el = nil)
   parent = @browser
   if parent_el
     parent = get_parent(@browser, parent_el)
@@ -237,16 +237,15 @@ And(/^I click the "([^"]*)"$/) do |element_name|
     el.click}
 end
 
-## Click the element if exists on the page$
-## * I click the "Sign In" if on "Signon page"
 And(/^I click the "([^"]*)" if on "([^"]*)" page$/) do |element_name, title|
   sleep 2
   if @browser.window.title.include? title
     Watir::Wait.until {
       el = find_element(element_name)
-      el.present?
-      el.focus
-      el.click}
+      # el.present?
+      # el.focus
+      el.click
+	  }
   end
 end
 

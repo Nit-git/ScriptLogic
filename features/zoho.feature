@@ -6,15 +6,13 @@ Feature: Zoho
    	* I go to the url "www.zoho.com\login.html"
 	
 	Scenario: Zoho
-    * enter "nithya@3qilabs.com" into "Email Address"
+    * enter "email" into "Email Address"
 	* enter "password" into "Password"
 	* "text_SignIn" is displayed in "signIn_buttonText"
 	* unselect "Keep me signed in"
-	* I click the "Sign In" if on "Sign in to your Zoho Account" page
-	
-	
+	# * I click the "Sign In" if on "Sign in to your Zoho Account" page
 	* I wait 3 seconds
-	# * click "button" with "Sign In"
+	* click "Sign In"
 	# * I wait 3 seconds
 	# * click "SalesIQ"
 	# * click "Time Zone"
